@@ -1,0 +1,20 @@
+{
+  "name": "playwright-payment-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:report": "npx playwright show-report",
+    "auth": "npx playwright test --project=setup"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.36.0",
+    "dotenv": "^17.3.1",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "imapflow": "^1.2.11",
+    "mailparser": "^3.9.3"
+  }
+}
