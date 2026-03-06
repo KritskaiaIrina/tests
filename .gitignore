@@ -1,18 +1,13 @@
-# Node modules
-
 node_modules/
-
-# Playwright artifacts
 
 test-results/
 playwright-report/
-
-# Playwright auth state
+blob-report/
+playwright/.cache/
 
 storagestate.json
 storageState.json
 
-# Environment variables
-
 .env
 .env.*
+*.log
