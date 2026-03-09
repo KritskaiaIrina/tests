@@ -8,6 +8,8 @@ export class PaymentPage {
   readonly minAmountError: Locator;
 
   private readonly verificationDialog: Locator;
+  private readonly receiveCurrencySelect: Locator;
+  private readonly rateOrLoaderHint: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -22,6 +24,16 @@ export class PaymentPage {
     this.verificationDialog = page.getByRole('dialog').filter({
       hasText: /пропустить проверку|требуется проверка/i,
     });
+
+    this.receiveCurrencySelect = page
+      .getByRole('combobox', { name: /к получению|валюта/i })
+      .or(page.locator('[data-testid="receive-currency"], [name="receiveCurrency"]'))
+      .first();
+
+    // Хинт для ожидания перерасчёта: или скрывается loader, или появляется курс/итоговая сумма.
+    this.rateOrLoaderHint = page
+      .locator('[data-testid="amount-loader"], [aria-busy="true"], text=/курс|комиссия|итого/i')
+      .first();
   }
 
   async gotoSendFiat() {
@@ -33,22 +45,45 @@ export class PaymentPage {
   async dismissVerificationDialog() {
     if (!(await this.verificationDialog.isVisible().catch(() => false))) return;
 
-    // В твоём кейсе есть "Все равно пропустить" (active)
-    const skipAnyway = this.verificationDialog.getByRole('button', {
-      name: /все равно пропустить/i,
-    });
+    const skipButtons = [
+      /все равно пропустить/i,
+      /пропустить в этот раз/i,
+      /^пропустить$/i,
+    ];
 
-    // Другие варианты, если UI поменяется
-    const skipOnce = this.verificationDialog.getByRole('button', {
-      name: /пропустить в этот раз/i,
-    });
-    const skip = this.verificationDialog.getByRole('button', { name: /^пропустить$/i });
-
-    if (await skipAnyway.isVisible().catch(() => false)) await skipAnyway.click();
-    else if (await skipOnce.isVisible().catch(() => false)) await skipOnce.click();
-    else if (await skip.isVisible().catch(() => false)) await skip.click();
+    for (const name of skipButtons) {
+      const button = this.verificationDialog.getByRole('button', { name });
+      if (await button.isVisible().catch(() => false)) {
+        await button.click();
+        break;
+      }
+    }
 
     await expect(this.verificationDialog).toBeHidden({ timeout: 15_000 });
+  }
+
+  async selectReceiveCurrency(currency: string) {
+    await this.dismissVerificationDialog();
+
+    await expect(this.receiveCurrencySelect).toBeVisible({ timeout: 30_000 });
+    await this.receiveCurrencySelect.click();
+
+    const option = this.page
+      .getByRole('option', { name: new RegExp(`^${currency}$`, 'i') })
+      .or(this.page.getByText(new RegExp(`^${currency}$`, 'i')))
+      .first();
+
+    await expect(option).toBeVisible({ timeout: 10_000 });
+    await option.click();
+  }
+
+  async waitForRecalculation() {
+    await this.dismissVerificationDialog();
+
+    // Дожидаемся завершения анимаций/перерасчёта без привязки к одному селектору.
+    await this.page.waitForLoadState('networkidle').catch(() => {});
+    await this.rateOrLoaderHint.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+    await this.page.waitForTimeout(300);
   }
 
   async fillReceiveAmount(value: string) {
