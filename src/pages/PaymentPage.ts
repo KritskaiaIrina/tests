@@ -101,6 +101,30 @@ export class PaymentPage {
     await this.page.waitForTimeout(300);
   }
 
+  async selectReceiveCurrency(currency: string) {
+    await this.dismissVerificationDialog();
+
+    await expect(this.receiveCurrencySelect).toBeVisible({ timeout: 30_000 });
+    await this.receiveCurrencySelect.click();
+
+    const option = this.page
+      .getByRole('option', { name: new RegExp(`^${currency}$`, 'i') })
+      .or(this.page.getByText(new RegExp(`^${currency}$`, 'i')))
+      .first();
+
+    await expect(option).toBeVisible({ timeout: 10_000 });
+    await option.click();
+  }
+
+  async waitForRecalculation() {
+    await this.dismissVerificationDialog();
+
+    // Дожидаемся завершения анимаций/перерасчёта без привязки к одному селектору.
+    await this.page.waitForLoadState('networkidle').catch(() => {});
+    await this.rateOrLoaderHint.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+    await this.page.waitForTimeout(300);
+  }
+
   async fillReceiveAmount(value: string) {
     // модалка может всплыть асинхронно
 >>>>>>> theirs
