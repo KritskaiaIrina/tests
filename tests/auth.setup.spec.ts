@@ -13,7 +13,7 @@ setup('auth (manual OTP) -> save storage state', async ({ page }) => {
   await page.waitForLoadState('domcontentloaded');
 
   const emailInput = page.locator('input[type="email"]');
-  await expect(emailInput).toBeVisible({ timeout: 30_000 });
+  await expect(emailInput).toBeVisible();
   await emailInput.fill(EMAIL);
 
   await page.getByRole('button', { name: 'Далее' }).click();
@@ -27,7 +27,7 @@ setup('auth (manual OTP) -> save storage state', async ({ page }) => {
 
   // 5) После OTP вводим пароль - надо запустить в ручную, нажав на зеленый треугольник.
   const passwordInput = page.locator('input[type="password"]');
-  await expect(passwordInput).toBeVisible({ timeout: 60_000 });
+  await expect(passwordInput).toBeVisible();
   await passwordInput.fill(PASSWORD);
 
   await page.getByRole('button', { name: /войти/i }).click();
@@ -35,6 +35,8 @@ setup('auth (manual OTP) -> save storage state', async ({ page }) => {
   // 6) Ждём, что мы вышли из auth-флоу
   await expect(page).not.toHaveURL(/\/auth/i, { timeout: 30_000 });
   await page.waitForLoadState('networkidle');
+
+  await page.pause(); // тут надо прокликать "пропустить"
 
   // 7) Сохраняем сессию
   await page.context().storageState({ path: 'storageState.json' });

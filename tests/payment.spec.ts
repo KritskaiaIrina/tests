@@ -11,10 +11,12 @@ test.describe('Payments', () => {
 
     // 2. В форме: выбрать CNY и ввести 1000 в "Сумма к получению"
     await payment.selectReceiveCurrency('CNY');
+    await page.locator('.btn-text-default').waitFor({ state: 'visible' });
+    await page.locator('.btn-text-default').click()
     await payment.fillReceiveAmount('1000');
 
     // 3. Дождаться перерасчета
-    await payment.waitForRecalculation();
+    //await payment.waitForRecalculation();
 
     // ОР: ошибка о минимальной сумме видна, кнопка "Продолжить" disabled
     await payment.expectMinAmountErrorVisible();
